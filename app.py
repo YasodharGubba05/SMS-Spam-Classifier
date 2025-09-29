@@ -3,19 +3,34 @@ import pickle
 
 st.title("SMS Spam Classifier")
 
-# Load model and vectorizer
-with open("model.pkl", "rb") as f:
-    model = pickle.load(f)
-with open("vectorizer.pkl", "rb") as f:
-    vectorizer = pickle.load(f)
+# Lazy-load model and vectorizer
+model = None
+vectorizer = None
+
+
+def load_model_vectorizer():
+    global model, vectorizer
+    if model is None or vectorizer is None:
+        with open("model.pkl", "rb") as f:
+            model = pickle.load(f)
+        with open("vectorizer.pkl", "rb") as f:
+            vectorizer = pickle.load(f)
+    return model, vectorizer
+
 
 def predict_sms(text):
-    text_vect = vectorizer.transform([text])
-    pred = model.predict(text_vect)[0]
-    return "Spam" if pred == 1 else "Not Spam"
+    m, v = load_model_vectorizer()
+    text_vect = v.transform([text])
+    pred = m.predict(text_vect)[0]
+
+    # Convert numerical prediction to label
+    if pred == 1:
+        return "Spam"
+    else:
+        return "Not Spam"
+
 
 sms_text = st.text_area("Enter SMS text:")
 if st.button("Classify"):
     result = predict_sms(sms_text)
-    color = "red" if result == "Spam" else "green"
-    st.markdown(f"<h3 style='color:{color}'>{result}</h3>", unsafe_allow_html=True)
+    st.write("Prediction:", result)
